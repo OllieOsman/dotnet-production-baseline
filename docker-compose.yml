@@ -1,0 +1,6 @@
+services:
+  baseline.api:
+    image: ${DOCKER_REGISTRY-}baselineapi
+    build:
+      context: .
+      dockerfile: src/Baseline.Api/Dockerfile
