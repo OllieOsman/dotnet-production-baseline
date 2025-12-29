@@ -77,4 +77,140 @@ Those distract from the core problem: **service behavior**.
 ---
 
 ## Project structure
+src/
+Api/
+Program.cs
+Startup.cs
+Health/
+Middleware/
+Infrastructure/
+Logging/
+Resilience/
+Hosting/
+Workers/
+BackgroundServices/
 
+The structure favors **behavioral boundaries** over technical layers.
+
+---
+
+## Startup philosophy
+
+Startup should be:
+- explicit
+- fast
+- fail early
+
+If a service cannot start safely, it **should not start at all**.
+
+There are no “best effort” startups here.
+
+---
+
+## Shutdown philosophy
+
+Shutdown should be:
+- cooperative
+- observable
+- boring
+
+When a SIGTERM is received:
+1. Stop accepting new work
+2. Allow in-flight work to complete
+3. Respect time limits
+4. Exit cleanly
+
+If work cannot finish safely, it should **fail loudly**, not silently.
+
+---
+
+## Health checks
+
+This baseline separates:
+- **Liveness**: _“Is the process running?”_
+- **Readiness**: _“Can this instance safely receive traffic?”_
+
+Readiness reflects:
+- dependency availability
+- background worker state
+- startup completion
+
+If readiness is false, traffic should be routed elsewhere.
+
+---
+
+## Resilience defaults
+
+Retries are:
+- bounded
+- intentional
+- observable
+
+Timeouts are:
+- explicit
+- enforced
+- short by default
+
+This baseline assumes:
+> _Retries are a form of load._
+
+They must be treated as such.
+
+---
+
+## Configuration rules
+
+- Invalid configuration fails fast
+- Required values are validated at startup
+- Runtime reloads are opt-in
+- Secrets are never logged
+
+Configuration drift is treated as a production risk.
+
+---
+
+## What this does **not** guarantee
+
+This baseline does not make your system:
+- scalable
+- fast
+- correct
+- cheap
+
+It makes your system:
+- predictable
+- debuggable
+- stoppable
+- safer to evolve
+
+---
+
+## How to use this repository
+
+You can:
+- clone it as a starting point
+- copy pieces selectively
+- disagree with it (recommended)
+
+If you disagree, document **why** — that’s where learning happens.
+
+---
+
+## Roadmap
+
+This repository evolves slowly and intentionally.
+
+Planned areas of exploration:
+- Backpressure strategies
+- Deployment-aware behavior
+- Graceful degradation patterns
+- Dependency failure modes
+
+---
+
+## Philosophy
+
+> Most production failures are not bugs —  
+> they are the system doing exactly what it was allowed to do.
+
+This repository narrows what a service is allowed to do by default.
