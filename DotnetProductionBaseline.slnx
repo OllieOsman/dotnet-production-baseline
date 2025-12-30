@@ -6,10 +6,10 @@
     <File Path="README.md" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="src/Baseline.Api/Baseline.Api.csproj" Id="62e695c0-6880-45f5-9e8c-dbae628862ca" />
+    <Project Path="src/DotnetProductionBaseline.Api/DotnetProductionBaseline.Api.csproj" Id="62e695c0-6880-45f5-9e8c-dbae628862ca" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Baseline.Api.Tests/Baseline.Api.Tests.csproj" Id="e3417320-87a2-4f52-b24c-3a3c62be4b6c" />
+    <Project Path="tests/DotnetProductionBaseline.Api.Tests/DotnetProductionBaseline.Api.Tests.csproj" Id="e3417320-87a2-4f52-b24c-3a3c62be4b6c" />
   </Folder>
   <Project Path="docker-compose.dcproj">
     <Build />

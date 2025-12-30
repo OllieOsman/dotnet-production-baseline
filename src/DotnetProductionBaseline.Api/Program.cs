@@ -1,3 +1,4 @@
+using DotnetProductionBaseline.Api.Extensions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Text.Json;
@@ -23,7 +24,11 @@ builder.Services.AddHealthChecks()
             : HealthCheckResult.Unhealthy("Database DOWN");
     }, tags: ["ready"]);
 
+builder.Services.AddProductionBaseline();
+
 var app = builder.Build();
+
+app.UseProductionBaseline();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
