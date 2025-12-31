@@ -1,4 +1,5 @@
 using DotnetProductionBaseline.Api.Extensions;
+using DotnetProductionBaseline.Api.Options;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Text.Json;
@@ -6,6 +7,10 @@ using System.Text.Json;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddProductionBaseline();
+
+// Application lifetime state to track readiness
+builder.Services.AddSingleton<ApplicationLifetimeState>();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -13,8 +18,15 @@ builder.Services.AddOpenApi();
 
 // Register health checks
 builder.Services.AddHealthChecks()
-    // Liveness check: basic self-check
-    .AddCheck("self", () => HealthCheckResult.Healthy("App is alive"), tags: ["live"])
+    // Liveness
+    .AddCheck("app_ready", () =>
+    {
+        // simple liveness check
+        var state = new ApplicationLifetimeState();
+        return state.IsReady
+            ? HealthCheckResult.Healthy("Application is ready")
+            : HealthCheckResult.Unhealthy("Application is not ready");
+    }, tags: ["ready"])
     // Readiness check: simulate DB or external service check
     .AddCheck("database", () =>
     {
@@ -24,9 +36,13 @@ builder.Services.AddHealthChecks()
             : HealthCheckResult.Unhealthy("Database DOWN");
     }, tags: ["ready"]);
 
-builder.Services.AddProductionBaseline();
-
 var app = builder.Build();
+
+// Register application lifetime events
+var lifetime = app.Lifetime;
+var state = app.Services.GetRequiredService<ApplicationLifetimeState>();
+
+lifetime.RegisterApplicationLifetimeState(state);
 
 app.UseProductionBaseline();
 
@@ -39,7 +55,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
-
 
 // Liveness endpoint
 app.MapHealthChecks("/health/live", new HealthCheckOptions

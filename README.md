@@ -24,3 +24,11 @@ An opinionated baseline for building **production-ready .NET services**: health 
 ### Run with Docker
 ```bash
 docker compose up --build
+
+## Graceful shutdown & readiness
+
+When the application receives a shutdown signal:
+1. Readiness immediately switches to unhealthy
+2. Traffic should stop being routed to the instance
+3. In-flight requests are allowed to complete
+
