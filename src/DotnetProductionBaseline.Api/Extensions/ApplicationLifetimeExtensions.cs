@@ -8,12 +8,12 @@ namespace DotnetProductionBaseline.Api.Extensions
     {
       lifetime.ApplicationStarted.Register(() =>
       {
-        state.MarkReady();
+        state.MarkStarted();
       });
 
       lifetime.ApplicationStopped.Register(() =>
       {
-        state.MarkNotReady();
+        state.MarkStopping();
       });
     }
   }

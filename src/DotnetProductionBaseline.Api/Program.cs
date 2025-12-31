@@ -1,4 +1,5 @@
 using DotnetProductionBaseline.Api.Extensions;
+using DotnetProductionBaseline.Api.Healthcheck;
 using DotnetProductionBaseline.Api.Options;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -19,14 +20,8 @@ builder.Services.AddOpenApi();
 // Register health checks
 builder.Services.AddHealthChecks()
     // Liveness
-    .AddCheck("app_ready", () =>
-    {
-        // simple liveness check
-        var state = new ApplicationLifetimeState();
-        return state.IsReady
-            ? HealthCheckResult.Healthy("Application is ready")
-            : HealthCheckResult.Unhealthy("Application is not ready");
-    }, tags: ["ready"])
+    .AddCheck("self", () => HealthCheckResult.Healthy("The application is running."), tags: ["live"])
+    .AddCheck<ReadinessHealthcheck>("readiness", tags: ["ready"])
     // Readiness check: simulate DB or external service check
     .AddCheck("database", () =>
     {
