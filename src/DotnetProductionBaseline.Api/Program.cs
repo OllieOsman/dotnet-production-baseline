@@ -1,5 +1,6 @@
 using DotnetProductionBaseline.Api.Extensions;
 using DotnetProductionBaseline.Api.Healthcheck;
+using DotnetProductionBaseline.Api.HostedServices;
 using DotnetProductionBaseline.Api.Options;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -12,6 +13,9 @@ builder.Services.AddProductionBaseline();
 
 // Application lifetime state to track readiness
 builder.Services.AddSingleton<ApplicationLifetimeState>();
+
+builder.Services.AddHostedService<LifetimeHostedService>();
+builder.Services.AddHostedService<GracefulWorker>();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
