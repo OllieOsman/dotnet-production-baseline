@@ -1,80 +1,68 @@
-﻿
-namespace DotnetProductionBaseline.Api.HostedServices
+﻿namespace DotnetProductionBaseline.Api.HostedServices;
+
+public sealed class GracefulWorker : BackgroundService
 {
-    public class GracefulWorker : BackgroundService
+    private readonly ILogger<GracefulWorker> _logger;
+    private readonly IHostApplicationLifetime _lifetime;
+
+    public GracefulWorker(
+        ILogger<GracefulWorker> logger,
+        IHostApplicationLifetime lifetime)
     {
-        private readonly ILogger<GracefulWorker> _logger;
-        private readonly IHostApplicationLifetime _lifetime;
+        _logger = logger;
+        _lifetime = lifetime;
+    }
 
-        public GracefulWorker(ILogger<GracefulWorker> logger, IHostApplicationLifetime lifetime)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        _logger.LogInformation("GracefulWorker started.");
+
+        // Optional: if you later add a queue consumer, you can pause intake here.
+        using var stoppingReg = _lifetime.ApplicationStopping.Register(() =>
         {
-            _logger = logger;
-            _lifetime = lifetime;
-        }
+            _logger.LogInformation("ApplicationStopping signaled. Worker will stop accepting new work.");
+        });
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        try
         {
-            _logger.LogInformation("GracefulWorker started.");
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
 
-            using var stoppingReg = _lifetime.ApplicationStopping.Register(() =>
+            while (await timer.WaitForNextTickAsync(stoppingToken))
             {
-                _logger.LogInformation("ApplicationStopping triggered. Worker will stop accepting new work.");
-                // Example: flip your own "accepting work" flag, pause consumers, etc.
-            });
-
-            try
-            {
-                using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
-
-                while (await timer.WaitForNextTickAsync(stoppingToken))
-                {
-                    // Do one unit of work per tick
-                    await DoWorkOnceAsync(stoppingToken);
-                }
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                // Expected during shutdown
-                _logger.LogInformation("GracefulWorker canceled.");
-            }
-            catch (Exception ex)
-            {
-                // Unexpected crash — log and rethrow so the host can decide what to do
-                _logger.LogError(ex, "GracefulWorker failed unexpectedly.");
-                throw;
-            }
-            finally
-            {
-                // Best-effort cleanup
-                await CleanupAsync(CancellationToken.None);
-                _logger.LogInformation("GracefulWorker stopped.");
+                await DoWorkOnceAsync(stoppingToken);
             }
         }
-
-        private async Task DoWorkOnceAsync(CancellationToken ct)
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
-            // Example pattern:
-            // 1) Acquire external resources (connections, locks, etc.)
-            // 2) Observe ct frequently
-            // 3) Keep each iteration bounded in time
-
-            _logger.LogInformation("Worker tick: doing work...");
-
-            // Simulated work
-            await Task.Delay(TimeSpan.FromSeconds(1), ct);
+            _logger.LogInformation("GracefulWorker cancellation requested.");
         }
-
-        private Task CleanupAsync(CancellationToken ct)
+        catch (Exception ex)
         {
-            // Close connections, flush buffers, etc.
-            return Task.CompletedTask;
+            _logger.LogError(ex, "GracefulWorker failed unexpectedly.");
+            throw;
         }
-
-        public override async Task StopAsync(CancellationToken cancellationToken)
+        finally
         {
-            _logger.LogInformation("GracefulWorker StopAsync called.");
-            await base.StopAsync(cancellationToken);
-            _logger.LogInformation("GracefulWorker StopAsync finished.");
+            // Best-effort cleanup (close connections, flush buffers, etc.)
+            _logger.LogInformation("GracefulWorker stopped.");
         }
+    }
+
+    private async Task DoWorkOnceAsync(CancellationToken ct)
+    {
+        // Keep iterations short and cancellation-aware.
+        _logger.LogInformation("Worker tick started.");
+
+        // Simulated work – replace with real unit of work later.
+        await Task.Delay(TimeSpan.FromSeconds(1), ct);
+
+        _logger.LogInformation("Worker tick complete.");
+    }
+
+    public override async Task StopAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("GracefulWorker StopAsync invoked.");
+        await base.StopAsync(cancellationToken);
+        _logger.LogInformation("GracefulWorker StopAsync completed.");
     }
 }

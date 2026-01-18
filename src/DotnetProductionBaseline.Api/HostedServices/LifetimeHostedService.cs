@@ -17,10 +17,10 @@ namespace DotnetProductionBaseline.Api.HostedServices
         public Task StartAsync(CancellationToken cancellationToken)
         {
             // Mark "started" once the host has fully started.
-            _lifetime.ApplicationStarted.Register(_state.MarkStarted);
+            _lifetime.ApplicationStarted.Register(_state.MarkNotReady);
 
             // Mark "stopping" as soon as shutdown begins.
-            _lifetime.ApplicationStopping.Register(_state.MarkStopping);
+            _lifetime.ApplicationStopping.Register(_state.MarkNotReady);
 
             return Task.CompletedTask;
         }
