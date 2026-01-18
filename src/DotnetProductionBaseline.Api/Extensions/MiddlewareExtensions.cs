@@ -1,11 +1,17 @@
 ﻿using DotnetProductionBaseline.Api.Middleware;
+using DotnetProductionBaseline.Api.Options;
 
 namespace DotnetProductionBaseline.Api.Extensions;
 
 public static class MiddlewareExtensions
 {
-    public static IServiceCollection AddProductionBaseline(this IServiceCollection services)
+    public static IServiceCollection AddProductionBaseline(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddOptions<ProductionBaselineOptions>()
+            .Bind(configuration.GetSection("ProductionBaseline"))
+            .Validate(o => o.SlowRequestThresholdMs > 0, "SlowRequestThresholdMs must be > 0")
+            .ValidateOnStart();
+
         services.AddTransient<CorrelationIdMiddleware>();
         services.AddTransient<RequestLoggingMiddleware>();
         services.AddTransient<ExceptionHandlingMiddleware>();

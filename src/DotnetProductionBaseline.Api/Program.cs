@@ -8,7 +8,7 @@ using System.Text.Json;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddProductionBaseline();
+builder.Services.AddProductionBaseline(builder.Configuration);
 
 // Application lifetime state to track readiness
 builder.Services.AddSingleton<ApplicationLifetimeState>();
