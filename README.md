@@ -32,3 +32,12 @@ When the application receives a shutdown signal:
 2. Traffic should stop being routed to the instance
 3. In-flight requests are allowed to complete
 
+## Observability
+
+All logs are automatically enriched with:
+correlation_id
+trace_id
+span_id
+Traces are emitted via OpenTelemetry
+Outbound calls and retries are traced and logged
+

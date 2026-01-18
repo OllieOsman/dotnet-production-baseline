@@ -151,6 +151,7 @@ public static class MiddlewareExtensions
     {
         // Order matters:
         app.UseMiddleware<CorrelationIdMiddleware>();
+        app.UseMiddleware<RequestContextLoggingScopeMiddleware>();
         app.UseMiddleware<ExceptionHandlingMiddleware>();
         app.UseMiddleware<RequestLoggingMiddleware>();
         app.UseMiddleware<SecurityHeadersMiddleware>();
