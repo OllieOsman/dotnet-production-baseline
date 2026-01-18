@@ -25,7 +25,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks()
     // Liveness
     .AddCheck("self", () => HealthCheckResult.Healthy("The application is running."), tags: ["live"])
-    .AddCheck<ReadinessHealthcheck>("readiness", tags: ["ready"]);
+    .AddCheck<ReadinessHealthcheck>("readiness", tags: ["ready"])
+    .AddCheck<SqlConnectionHealthCheck>("sql", tags: ["ready", "db"]);
 
 var app = builder.Build();
 
