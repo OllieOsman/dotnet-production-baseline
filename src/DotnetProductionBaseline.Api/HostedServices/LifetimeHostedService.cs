@@ -1,5 +1,5 @@
 ﻿
-using DotnetProductionBaseline.Api.Options;
+using DotnetProductionBaseline.Api.Healthcheck;
 
 namespace DotnetProductionBaseline.Api.HostedServices
 {

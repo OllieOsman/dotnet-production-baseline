@@ -1,7 +1,6 @@
 using DotnetProductionBaseline.Api.Extensions;
 using DotnetProductionBaseline.Api.Healthcheck;
 using DotnetProductionBaseline.Api.HostedServices;
-using DotnetProductionBaseline.Api.Options;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Text.Json;
@@ -14,6 +13,7 @@ builder.Services.AddProductionBaseline();
 // Application lifetime state to track readiness
 builder.Services.AddSingleton<ApplicationLifetimeState>();
 
+builder.Services.AddHostedService<StartupWarmupHostedService>();
 builder.Services.AddHostedService<LifetimeHostedService>();
 builder.Services.AddHostedService<GracefulWorker>();
 
@@ -25,15 +25,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks()
     // Liveness
     .AddCheck("self", () => HealthCheckResult.Healthy("The application is running."), tags: ["live"])
-    .AddCheck<ReadinessHealthcheck>("readiness", tags: ["ready"])
-    // Readiness check: simulate DB or external service check
-    .AddCheck("database", () =>
-    {
-        bool dbIsUp = true; // Replace with real DB check
-        return dbIsUp
-            ? HealthCheckResult.Healthy("Database OK")
-            : HealthCheckResult.Unhealthy("Database DOWN");
-    }, tags: ["ready"]);
+    .AddCheck<ReadinessHealthcheck>("readiness", tags: ["ready"]);
 
 var app = builder.Build();
 
