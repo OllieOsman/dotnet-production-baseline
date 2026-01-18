@@ -1,6 +1,6 @@
 services:
   baseline.api:
-    image: ${DOCKER_REGISTRY-}baselineapi
+    image: ${DOCKER_REGISTRY-}dotnetproductionbaselineapi
     build:
       context: .
-      dockerfile: src/Baseline.Api/Dockerfile
+      dockerfile: src/DotnetProductionBaseline.Api/Dockerfile
