@@ -2,6 +2,10 @@
 using DotnetProductionBaseline.Api.Middleware;
 using DotnetProductionBaseline.Api.Options;
 using Microsoft.Extensions.Options;
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Polly;
 using Polly.Retry;
 
@@ -29,9 +33,11 @@ public static class MiddlewareExtensions
             .Validate(o => o.BaseDelayMs is > 0 and <= 5000, "OutboundHttp:BaseDelayMs must be 1-5000")
             .ValidateOnStart();
 
+        // HttpClient with resilience policies (can be registered multiple times for different APIs)
         services.AddHttpClient<ISampleExternalApi, SampleExternalApi>()
             .ConfigureHttpClient(c => c.Timeout = Timeout.InfiniteTimeSpan);
 
+        // Centralized resilience pipeline configuration
         services.ConfigureHttpClientDefaults(http =>
         {
             http.AddResilienceHandler(ResiliencePipelines.Baseline, (builder, context) =>
@@ -81,6 +87,58 @@ public static class MiddlewareExtensions
 
         // Typed client registration (once)
         services.AddHttpClient<ISampleExternalApi, SampleExternalApi>();
+
+        // OpenTelemetry configuration
+        services.AddOptions<OpenTelemetryOptions>()
+            .Bind(configuration.GetSection(OpenTelemetryOptions.SectionName))
+            .Validate(o => !string.IsNullOrWhiteSpace(o.ServiceName), "OpenTelemetry:ServiceName is required")
+            .ValidateOnStart();
+
+        var otelOptions = configuration
+            .GetSection(OpenTelemetryOptions.SectionName)
+            .Get<OpenTelemetryOptions>() ?? new OpenTelemetryOptions();
+
+        // Shared resource builder for both tracing and metrics
+        var resourceBuilder = ResourceBuilder.CreateDefault()
+            .AddService(
+                serviceName: otelOptions.ServiceName,
+                serviceVersion: otelOptions.ServiceVersion);
+
+        // Note: In production, you'd typically use an exporter like OTLP to send data to a backend (e.g., New Relic, Datadog, Splunk, etc.)
+        services.AddOpenTelemetry()
+            .WithTracing(tracing =>
+            {
+                if (!otelOptions.Enabled)
+                    return;
+
+                tracing
+                    .SetResourceBuilder(resourceBuilder)
+                    .AddAspNetCoreInstrumentation(options =>
+                    {
+                        // Reduce noise from probes
+                        options.Filter = ctx => !ctx.Request.Path.StartsWithSegments("/health");
+                    })
+                    .AddHttpClientInstrumentation();
+
+                if (otelOptions.UseConsoleExporter)
+                {
+                    tracing.AddConsoleExporter();
+                }
+            })
+            .WithMetrics(metrics =>
+            {
+                if (!otelOptions.Enabled)
+                    return;
+
+                metrics
+                    .SetResourceBuilder(resourceBuilder)
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddRuntimeInstrumentation();
+
+                // For metrics, you would typically use a Prometheus exporter in production. Console exporter is not ideal for metrics.
+                // metrics.AddPrometheusExporter();
+            });
 
         services.AddTransient<CorrelationIdMiddleware>();
         services.AddTransient<RequestLoggingMiddleware>();
